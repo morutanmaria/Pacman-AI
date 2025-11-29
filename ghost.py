@@ -1,15 +1,30 @@
 import pygame
 import random
 from collections import deque
-from settings import TILE_SIZE, BLUE
+from settings import TILE_SIZE
+from settings import BLUE_BUHUHU
 import heapq
 
 class Ghost(pygame.sprite.Sprite):
-    def __init__(self, x, y, maze, color=(255, 0, 0)):
+    def __init__(self, x, y, maze, color):
         super().__init__()
         
-        self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
-        self.image.fill(color)
+        self.image = pygame.Surface((TILE_SIZE, TILE_SIZE)).convert_alpha()
+        self.image.fill((0, 0, 0, 0))
+        self.color = color
+        T = TILE_SIZE
+
+        body_rect = pygame.Rect(0, T // 4, T, T * 3 // 4)
+        pygame.draw.rect(self.image, self.color, body_rect, border_radius = T // 4)
+        pygame.draw.circle(self.image, self.color, (T // 2, T // 2), T // 2)
+
+        eye_radius = T // 6
+        pupil_radius = T // 12
+        pygame.draw.circle(self.image, (255, 255, 255), (T // 3, T // 3), eye_radius)
+        pygame.draw.circle(self.image, (0, 0, 0), (T // 3, T // 3), pupil_radius)
+
+        pygame.draw.circle(self.image, (255, 255, 255), (T * 2 // 3, T // 3), eye_radius)
+        pygame.draw.circle(self.image, (0, 0, 0), (T * 2 // 3, T // 3), pupil_radius)
         self.rect = self.image.get_rect(topleft=(x, y))
 
         self.maze = maze  
@@ -251,10 +266,17 @@ class Ghost(pygame.sprite.Sprite):
                 next_tile = self.astar(start, goal)
                 if next_tile:
                     self.move_to_tile(next_tile)
-        
+            elif mode == "frightened":
+                if pygame.time.get_ticks() - self.frightened_timer_start > self.frightened_duration:
+                    self.mode = "chase"
+                    self.color = self.original_color
+
         old_x, old_y = self.rect.x, self.rect.y
-        
-        dx, dy = self.direction
+        if len(self.direction) == 2:
+            dx, dy = self.direction
+        else:
+            dx, dy = (0, 0)
+
         self.rect.x += dx * self.speed
         self.rect.y += dy * self.speed
         
@@ -292,3 +314,14 @@ class Ghost(pygame.sprite.Sprite):
             self.direction = (0, 1)
         elif ny < sy: 
             self.direction = (0, -1)
+
+    def set_frightened_mode(self):
+        self.original_color = self.color
+        self.color = BLUE_BUHUHU
+        self.mode = "frightened"
+
+        self.frightened_timer_start = pygame.time.get_ticks() 
+        self.frightened_duration = 8000
+
+        currentx , currenty = self.direction
+        self.direction = (-currentx, -currenty)

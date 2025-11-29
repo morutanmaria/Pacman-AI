@@ -98,6 +98,12 @@ while running:
             running = False
         panel.handle_event(event)
 
+    eaten_energizer = pygame.sprite.spritecollide(player, energizers_group, True)
+    if eaten_energizer:
+        print("Yummy! Ghosts are now frightened!")
+        for ghost in ghost_group:
+            ghost.set_frightened_mode()
+
     keys = pygame.key.get_pressed()
 
     player.update(keys, walls_group)
