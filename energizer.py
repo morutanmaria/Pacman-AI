@@ -1,8 +1,8 @@
 import pygame
-from settings import WHITE
+from settings import WHITE, TILE_SIZE
 
-class Pellet(pygame.sprite.Sprite):
-    def __init__(self, x, y, radius = 4):
+class Energizer(pygame.sprite.Sprite):
+    def __init__(self, x, y, radius = 12):
         super().__init__()
         self.image = pygame.Surface((radius*2, radius*2))
         pygame.draw.circle(self.image, WHITE, (radius, radius), radius)

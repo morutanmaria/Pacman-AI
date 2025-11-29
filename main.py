@@ -14,8 +14,12 @@ clock = pygame.time.Clock()
 
 
 from wall import Wall
+from pellet import Pellet 
+from energizer import Energizer
 
 walls_group = pygame.sprite.Group()
+pellets_group = pygame.sprite.Group()
+energizers_group = pygame.sprite.Group()
 
 for row_idx, row in enumerate(MAZE):
     for col_idx, tile in enumerate(row):
@@ -27,7 +31,18 @@ for row_idx, row in enumerate(MAZE):
                 TILE_SIZE
             )
             walls_group.add(wall)
-
+        elif tile == 0:
+            pellet = Pellet(
+                col_idx * TILE_SIZE + TILE_SIZE//2,
+                row_idx * TILE_SIZE + TILE_SIZE//2
+            )
+            pellets_group.add(pellet)
+        elif tile == 2:
+            energizer = Energizer(
+                col_idx * TILE_SIZE + TILE_SIZE//2,
+                row_idx * TILE_SIZE + TILE_SIZE//2
+            )
+            energizers_group.add(energizer)
 
 
 player = Player(2 * TILE_SIZE, 2 * TILE_SIZE)
@@ -60,6 +75,8 @@ while running:
     screen.fill(BLACK)
 
     walls_group.draw(screen)
+    pellets_group.draw(screen) 
+    energizers_group.draw(screen)
     player_group.draw(screen)
     ghost_group.draw(screen)
 
