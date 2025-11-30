@@ -11,27 +11,52 @@ class Ghost(pygame.sprite.Sprite):
         
         self.image = pygame.Surface((TILE_SIZE, TILE_SIZE)).convert_alpha()
         self.image.fill((0, 0, 0, 0))
+        self.original_color = color
         self.color = color
         T = TILE_SIZE
+
+        self.start_x = x
+        self.start_y = y
 
         body_rect = pygame.Rect(0, T // 4, T, T * 3 // 4)
         pygame.draw.rect(self.image, self.color, body_rect, border_radius = T // 4)
         pygame.draw.circle(self.image, self.color, (T // 2, T // 2), T // 2)
 
-        eye_radius = T // 6
-        pupil_radius = T // 12
-        pygame.draw.circle(self.image, (255, 255, 255), (T // 3, T // 3), eye_radius)
-        pygame.draw.circle(self.image, (0, 0, 0), (T // 3, T // 3), pupil_radius)
+        # eye_radius = T // 6
+        # pupil_radius = T // 12
+        # pygame.draw.circle(self.image, (255, 255, 255), (T // 3, T // 3), eye_radius)
+        # pygame.draw.circle(self.image, (0, 0, 0), (T // 3, T // 3), pupil_radius)
 
-        pygame.draw.circle(self.image, (255, 255, 255), (T * 2 // 3, T // 3), eye_radius)
-        pygame.draw.circle(self.image, (0, 0, 0), (T * 2 // 3, T // 3), pupil_radius)
+        # pygame.draw.circle(self.image, (255, 255, 255), (T * 2 // 3, T // 3), eye_radius)
+        # pygame.draw.circle(self.image, (0, 0, 0), (T * 2 // 3, T // 3), pupil_radius)
         self.rect = self.image.get_rect(topleft=(x, y))
 
         self.maze = maze  
-
+        self.frightened = False
         self.speed = 2
         self.direction = random.choice([(1,0),(-1,0),(0,1),(0,-1)])
         self.walls_group = None
+
+    def update_eyes(self):
+        T = TILE_SIZE
+        dx, dy = self.direction
+        
+        offset = T // 8
+        ox = dx * offset
+        oy = dy * offset
+
+        self.image.fill((0, 0, 0, 0))
+
+        body_rect = pygame.Rect(0, T // 4, T, T * 3 // 4)
+        pygame.draw.rect(self.image, self.color, body_rect, border_radius=T // 4)
+        pygame.draw.circle(self.image, self.color, (T // 2, T // 2), T // 2)
+
+        pygame.draw.circle(self.image, (255,255,255), (T//3, T//3), T//6)
+        pygame.draw.circle(self.image, (255,255,255), (2*T//3, T//3), T//6)
+
+        pygame.draw.circle(self.image, (0,0,0), (T//3 + ox, T//3 + oy), T//12)
+        pygame.draw.circle(self.image, (0,0,0), (2*T//3 + ox, T//3 + oy), T//12)
+
 
     def set_walls(self, walls_group):
         self.walls_group = walls_group
@@ -136,25 +161,6 @@ class Ghost(pygame.sprite.Sprite):
             step = visited[step]
         return step  
 
-    #nu cred ca mai avem nevoie de smart_ai, poate fi sters, este functia move_to_tile si pentru dfs si astar
-    def smart_ai(self, player):
-        start = self.get_tile()
-        px = player.rect.centerx // TILE_SIZE
-        py = player.rect.centery // TILE_SIZE
-        goal = (px, py)
-
-        next_tile = self.bfs(start, goal)
-        if not next_tile:
-            return  
-
-        sx, sy = start
-        nx, ny = next_tile
-
-        if nx > sx: self.direction = (1,0)
-        if nx < sx: self.direction = (-1,0)
-        if ny > sy: self.direction = (0,1)
-        if ny < sy: self.direction = (0,-1)
-
     def hmd(self, p1: tuple[int, int], p2: tuple[int, int]) -> float:
         x1, y1 = p1
         x2, y2 = p2
@@ -244,6 +250,8 @@ class Ghost(pygame.sprite.Sprite):
         return step
 
     def update(self, player, mode="random"):
+        if hasattr(self, "mode") and self.mode == "frightened":
+            mode = "frightened"
         if self.at_tile_center():
             start = self.get_tile()
             px = player.rect.centerx // TILE_SIZE
@@ -267,8 +275,13 @@ class Ghost(pygame.sprite.Sprite):
                 if next_tile:
                     self.move_to_tile(next_tile)
             elif mode == "frightened":
+                self.speed = 1
+                self.frightened = True
+                self.random_ai()
                 if pygame.time.get_ticks() - self.frightened_timer_start > self.frightened_duration:
-                    self.mode = "chase"
+                    self.speed = 2
+                    self.frightened = False
+                    self.mode = None
                     self.color = self.original_color
 
         old_x, old_y = self.rect.x, self.rect.y
@@ -294,6 +307,8 @@ class Ghost(pygame.sprite.Sprite):
             self.rect.top = 0
         if self.rect.bottom > maze_height:
             self.rect.bottom = maze_height
+        self.update_eyes()
+
 
     def move_to_tile(self, next_tile):
         """Set direction towards next tile"""
@@ -316,12 +331,16 @@ class Ghost(pygame.sprite.Sprite):
             self.direction = (0, -1)
 
     def set_frightened_mode(self):
-        self.original_color = self.color
-        self.color = BLUE_BUHUHU
-        self.mode = "frightened"
-
-        self.frightened_timer_start = pygame.time.get_ticks() 
+        if not self.frightened:
+            self.mode = "frightened"
+            self.frightened = True
+            self.frightened_timer_start = pygame.time.get_ticks() 
+            self.frightened_duration = 8000
+            currentx , currenty = self.direction
+            self.direction = (-currentx, -currenty)
+        self.frightened_timer_start = pygame.time.get_ticks()
         self.frightened_duration = 8000
-
-        currentx , currenty = self.direction
-        self.direction = (-currentx, -currenty)
+        self.color = BLUE_BUHUHU
+    
+    def reset_position(self):
+        self.rect.topleft = (self.start_x, self.start_y)

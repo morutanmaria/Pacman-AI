@@ -29,6 +29,8 @@ walls_group = pygame.sprite.Group()
 pellets_group = pygame.sprite.Group()
 energizers_group = pygame.sprite.Group()
 
+points = 0
+
 for row_idx, row in enumerate(MAZE):
     for col_idx, tile in enumerate(row):
         if tile == 1:  
@@ -68,7 +70,7 @@ for ghost in ghost_group:
     ghost.set_walls(walls_group)
 
 font = pygame.font.SysFont(None, 24)
-panel = ButtonPanel(SCREEN_WIDTH - 150, 50, 120, 40, 10, font)
+panel = ButtonPanel(SCREEN_WIDTH - 150, 100, 120, 40, 10, font)
 
 ghost_mode = "random"
 def set_dfs():
@@ -101,12 +103,30 @@ while running:
     eaten_energizer = pygame.sprite.spritecollide(player, energizers_group, True)
     if eaten_energizer:
         print("Yummy! Ghosts are now frightened!")
+        points += 50
         for ghost in ghost_group:
             ghost.set_frightened_mode()
+
+    eaten_pellet = pygame.sprite.spritecollide(player, pellets_group, True)
+    if eaten_pellet:
+        points += 10
+        print("Yum! Pretty good")
 
     keys = pygame.key.get_pressed()
 
     player.update(keys, walls_group)
+
+    collided_ghosts = pygame.sprite.spritecollide(player, ghost_group, False)
+    for ghost in collided_ghosts:
+        if ghost.frightened:
+            points += 200
+            ghost.reset_position()
+            print("Ghost eaten! +200")
+        else:
+            points -= 500
+            if points < 0:
+                print("Pac-Man caught! GAME OVER")
+                running = False
 
     for ghost in ghost_group:
         ghost.update(player, mode=ghost_mode)  
@@ -119,6 +139,8 @@ while running:
     player_group.draw(screen)
     ghost_group.draw(screen)
     panel.draw(screen)
+    score_text = font.render(f"Points: {points}", True, (255, 255, 255))
+    screen.blit(score_text, (SCREEN_WIDTH - 140, 50))
 
     pygame.display.flip()
 
