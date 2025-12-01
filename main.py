@@ -31,6 +31,12 @@ energizers_group = pygame.sprite.Group()
 
 points = 0
 
+def draw_path(surface, path, color=(0, 255, 0)):
+    for (tx, ty) in path:
+        rect = pygame.Rect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+        pygame.draw.rect(surface, color, rect, 2)
+
+
 for row_idx, row in enumerate(MAZE):
     for col_idx, tile in enumerate(row):
         if tile == 1:  
@@ -73,6 +79,7 @@ font = pygame.font.SysFont(None, 24)
 panel = ButtonPanel(SCREEN_WIDTH - 150, 100, 120, 40, 10, font)
 
 ghost_mode = "random"
+show_paths= False
 def set_dfs():
     global ghost_mode
     ghost_mode = "dfs"
@@ -99,6 +106,11 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         panel.handle_event(event)
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_p:
+                show_paths = not show_paths
+                print("Show paths:", show_paths)
 
     eaten_energizer = pygame.sprite.spritecollide(player, energizers_group, True)
     if eaten_energizer:
@@ -141,6 +153,27 @@ while running:
     panel.draw(screen)
     score_text = font.render(f"Points: {points}", True, (255, 255, 255))
     screen.blit(score_text, (SCREEN_WIDTH - 140, 50))
+
+    if show_paths:
+        for ghost in ghost_group:
+            start = ghost.get_tile()
+            player_tile = (
+                player.rect.centerx // TILE_SIZE,
+                player.rect.centery // TILE_SIZE
+            )
+
+            if ghost_mode == "bfs":
+                path = ghost.bfs_full_path(start, player_tile)
+                draw_path(screen, path, (0, 255, 0))
+
+
+            elif ghost_mode == "dfs":
+                path = ghost.dfs_full_path(start, player_tile)
+                draw_path(screen, path, (255, 255, 0))
+
+            elif ghost_mode == "astar":
+                path = ghost.astar_full_path(start, player_tile)
+                draw_path(screen, path, (255, 0, 0))
 
     pygame.display.flip()
 
