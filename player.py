@@ -21,9 +21,23 @@ class Player(pygame.sprite.Sprite):
         self.speed = 4
         self.direction = (1, 0)
         self.mouth_angle = 30
+        self.invincible = False
+        self.invincible_timer = 0
+        self.invincible_duration = 2000
+        self.visible = True
+        self.blink_timer = 0
         
 
     def update(self, keys_pressed, walls):
+        if self.invincible:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.invincible_timer > self.invincible_duration:
+                self.invincible = False
+                self.visible = True
+            else:
+                if current_time - self.blink_timer > 100:
+                    self.visible = not self.visible
+                    self.blink_timer = current_time
         dx = dy = 0
     
         if keys_pressed[pygame.K_LEFT]:
@@ -57,10 +71,15 @@ class Player(pygame.sprite.Sprite):
                     self.rect.bottom = wall.rect.top
                 elif dy < 0:
                     self.rect.top = wall.rect.bottom
-        self.redraw()
+        if not self.invincible or self.visible:
+            self.redraw()
+        else:
+            self.image.fill((0, 0, 0, 0))
 
     def redraw(self):
         self.image.fill((0, 0, 0, 0))
+        if self.invincible and not self.visible:
+            return
 
         center = (self.radius, self.radius)
         r = self.radius

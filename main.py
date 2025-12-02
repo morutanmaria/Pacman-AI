@@ -143,17 +143,32 @@ while running:
     elif pacman_mode == "reflex":
         player.reflex_update(walls_group, ghost_group, pellets_group, energizers_group)
 
-    collided_ghosts = pygame.sprite.spritecollide(player, ghost_group, False)
-    for ghost in collided_ghosts:
-        if ghost.frightened:
-            points += 200
-            ghost.reset_position()
-            print("Ghost eaten! +200")
-        else:
-            points -= 500
-            if points < 0:
-                print("Pac-Man caught! GAME OVER")
-                running = False
+    current_time = pygame.time.get_ticks()
+
+    if not player.invincible:
+        collided_ghosts = pygame.sprite.spritecollide(player, ghost_group, False)
+        
+        if collided_ghosts:
+            for ghost in collided_ghosts:
+                if hasattr(ghost, 'frightened') and ghost.frightened:
+                    points += 200
+                    ghost.reset_position()
+                    print("Ghost eaten! +200")
+                else:
+                    points -= 500
+                    ghost.reset_position()
+                    if points < 0:
+                        points = 0
+                        running = False
+                    
+                    player.invincible = True
+                    player.invincible_timer = current_time
+                    player.blink_timer = current_time
+                    
+                    player.rect.x = 3 * TILE_SIZE
+                    player.rect.y = 3 * TILE_SIZE
+                    
+                    break
 
     for ghost in ghost_group:
         ghost.update(player, mode=ghost_mode)  
