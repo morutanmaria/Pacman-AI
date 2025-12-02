@@ -24,12 +24,14 @@ from pellet import Pellet
 from energizer import Energizer
 from buttonPanel import ButtonPanel
 from buttons import Button
+from heart import heart
 
 walls_group = pygame.sprite.Group()
 pellets_group = pygame.sprite.Group()
 energizers_group = pygame.sprite.Group()
 
 points = 0
+lives = 3 
 
 GHOST_HOUSE_ROWS = range(7, 11)
 GHOST_HOUSE_COLS = range(9, 19)
@@ -156,6 +158,7 @@ while running:
                     print("Ghost eaten! +200")
                 else:
                     points -= 500
+                    lives -= 1
                     ghost.reset_position()
                     if points < 0:
                         points = 0
@@ -183,6 +186,7 @@ while running:
     panel.draw(screen)
     score_text = font.render(f"Points: {points}", True, (255, 255, 255))
     screen.blit(score_text, (SCREEN_WIDTH - 140, 50))
+    heart(screen, lives, SCREEN_WIDTH - 140, 10, size=20)
 
     if show_paths:
         for ghost in ghost_group:

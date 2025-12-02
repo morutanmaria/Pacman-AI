@@ -331,19 +331,30 @@ class Ghost(pygame.sprite.Sprite):
             self.direction = (0, -1)
 
     def set_frightened_mode(self):
+        current_time = pygame.time.get_ticks()
         if not self.frightened:
             self.mode = "frightened"
             self.frightened = True
             self.frightened_timer_start = pygame.time.get_ticks() 
             self.frightened_duration = 8000
-            currentx , currenty = self.direction
-            self.direction = (-currentx, -currenty)
-        self.frightened_timer_start = pygame.time.get_ticks()
-        self.frightened_duration = 8000
+        else:
+            time_elapsed = current_time - self.frightened_timer_start
+            time_remaining = max(0, self.frightened_duration - time_elapsed)
+            self.frightened_duration = time_remaining + 8000
+            self.frightened_timer_start = current_time
+            self.mode = "frightened"
+            self.frightened = True
+        currentx , currenty = self.direction
+        self.direction = (-currentx, -currenty)
         self.color = BLUE_BUHUHU
+        self.speed = 1
     
     def reset_position(self):
         self.rect.topleft = (self.start_x, self.start_y)
+        self.frightened = False
+        self.color = self.original_color
+        self.speed = 2
+        self.mode = None
 
     def dfs_full_path(self, start, goal):
         stack = [start]
