@@ -162,18 +162,19 @@ while running:
                 player.rect.centery // TILE_SIZE
             )
 
+            ghost_color = ghost.color
+
             if ghost_mode == "bfs":
                 path = ghost.bfs_full_path(start, player_tile)
-                draw_path(screen, path, (0, 255, 0))
-
+                draw_path(screen, path, ghost_color)
 
             elif ghost_mode == "dfs":
                 path = ghost.dfs_full_path(start, player_tile)
-                draw_path(screen, path, (255, 255, 0))
+                draw_path(screen, path, ghost_color)
 
             elif ghost_mode == "astar":
                 path = ghost.astar_full_path(start, player_tile)
-                draw_path(screen, path, (255, 0, 0))
+                draw_path(screen, path, ghost_color)
 
     pygame.display.flip()
 
