@@ -23,15 +23,26 @@ from wall import Wall
 from pellet import Pellet 
 from energizer import Energizer
 from buttonPanel import ButtonPanel
+from cherry import Cherry
 from buttons import Button
 from heart import heart
 
 walls_group = pygame.sprite.Group()
 pellets_group = pygame.sprite.Group()
 energizers_group = pygame.sprite.Group()
+cherries_group = pygame.sprite.Group()
 
 points = 0
 lives = 3 
+
+# cherry spawn logic
+CHERRY_THRESHOLDS = [70, 170]
+cherry_spawned_flags = {t: False for t in CHERRY_THRESHOLDS}
+cherry_active = False
+cherry_spawn_time = None   #cand apare (ms)
+CHERRY_DURATION = 8000   # 8 secunde
+CHERRY_SCORE = 100
+
 
 GHOST_HOUSE_ROWS = range(7, 11)
 GHOST_HOUSE_COLS = range(9, 19)
@@ -40,6 +51,16 @@ def draw_path(surface, path, color=(0, 255, 0)):
     for (tx, ty) in path:
         rect = pygame.Rect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE)
         pygame.draw.rect(surface, color, rect, 2)
+
+def spawn_cherry_under_house():
+    spawn_row = max(GHOST_HOUSE_ROWS) + 1
+    spawn_col = (min(GHOST_HOUSE_COLS) + max(GHOST_HOUSE_COLS)) // 2
+
+    x = spawn_col * TILE_SIZE + TILE_SIZE // 2
+    y = spawn_row * TILE_SIZE + TILE_SIZE // 2
+
+    cherry = Cherry(x, y)
+    return cherry
 
 
 for row_idx, row in enumerate(MAZE):
@@ -143,6 +164,13 @@ while running:
         points += 10
         print("Yum! Pretty good")
 
+    eaten_cherry = pygame.sprite.spritecollide(player, cherries_group, True)
+    if eaten_cherry:
+        points += CHERRY_SCORE
+        cherry_active = False
+        cherry_spawn_time = None
+        print("Cherry eaten! +100")
+
     keys = pygame.key.get_pressed()
 
     if player_mode == "manual":
@@ -151,6 +179,25 @@ while running:
         player.auto_update(walls_group, pellets_group, energizers_group, ghost_group, player_mode)
 
     current_time = pygame.time.get_ticks()
+
+    #apare cherry la prag (doar o data apare cand atingi pragul intr-un meci)
+    #apare doar daca nu este alt cherry deja pe harta
+    for t in CHERRY_THRESHOLDS:
+        if points >= t and not cherry_spawned_flags[t] and not cherry_active:
+            cherry = spawn_cherry_under_house()
+            cherries_group.add(cherry)
+            cherry_active = True
+            cherry_spawn_time = pygame.time.get_ticks()
+            cherry_spawned_flags[t] = True
+            break
+
+    #stergem dupa 8 secunde
+    if cherry_active and cherry_spawn_time is not None:
+        if pygame.time.get_ticks() - cherry_spawn_time > CHERRY_DURATION:
+            for c in list(cherries_group):
+                c.kill()
+            cherry_active = False
+            cherry_spawn_time = None
 
     if not player.invincible:
         collided_ghosts = pygame.sprite.spritecollide(player, ghost_group, False)
@@ -184,7 +231,8 @@ while running:
     screen.fill(BLACK)
 
     walls_group.draw(screen)
-    pellets_group.draw(screen) 
+    pellets_group.draw(screen)
+    cherries_group.draw(screen)
     energizers_group.draw(screen)
     player_group.draw(screen)
     ghost_group.draw(screen)
