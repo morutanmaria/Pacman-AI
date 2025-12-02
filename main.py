@@ -31,6 +31,9 @@ energizers_group = pygame.sprite.Group()
 
 points = 0
 
+GHOST_HOUSE_ROWS = range(7, 11)
+GHOST_HOUSE_COLS = range(9, 19)
+
 def draw_path(surface, path, color=(0, 255, 0)):
     for (tx, ty) in path:
         rect = pygame.Rect(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE)
@@ -48,11 +51,12 @@ for row_idx, row in enumerate(MAZE):
             )
             walls_group.add(wall)
         elif tile == 0:
-            pellet = Pellet(
-                col_idx * TILE_SIZE + TILE_SIZE//2,
-                row_idx * TILE_SIZE + TILE_SIZE//2
-            )
-            pellets_group.add(pellet)
+            if not (row_idx in GHOST_HOUSE_ROWS and col_idx in GHOST_HOUSE_COLS):
+                pellet = Pellet(
+                    col_idx * TILE_SIZE + TILE_SIZE//2,
+                    row_idx * TILE_SIZE + TILE_SIZE//2
+                )
+                pellets_group.add(pellet)
         elif tile == 2:
             energizer = Energizer(
                 col_idx * TILE_SIZE + TILE_SIZE//2,
@@ -67,10 +71,10 @@ player_group = pygame.sprite.Group(player)
 
 ghost_group = pygame.sprite.Group()
 
-ghost_group.add(Ghost(8 * TILE_SIZE, 7 * TILE_SIZE, MAZE, BLINKY))     
-ghost_group.add(Ghost(10 * TILE_SIZE, 7 * TILE_SIZE, MAZE, PINKY))  
-ghost_group.add(Ghost(13 * TILE_SIZE, 7 * TILE_SIZE, MAZE, INKY))  
-ghost_group.add(Ghost(14 * TILE_SIZE, 7 * TILE_SIZE, MAZE, CLYDE)) 
+ghost_group.add(Ghost(9 * TILE_SIZE, 8 * TILE_SIZE, MAZE, BLINKY))     
+ghost_group.add(Ghost(16 * TILE_SIZE, 8 * TILE_SIZE, MAZE, PINKY))  
+ghost_group.add(Ghost(9 * TILE_SIZE, 9 * TILE_SIZE, MAZE, INKY))  
+ghost_group.add(Ghost(16* TILE_SIZE, 9 * TILE_SIZE, MAZE, CLYDE)) 
 
 for ghost in ghost_group:
     ghost.set_walls(walls_group)
