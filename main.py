@@ -24,12 +24,14 @@ from pellet import Pellet
 from energizer import Energizer
 from buttonPanel import ButtonPanel
 from buttons import Button
+from heart import heart
 
 walls_group = pygame.sprite.Group()
 pellets_group = pygame.sprite.Group()
 energizers_group = pygame.sprite.Group()
 
 points = 0
+lives = 3 
 
 GHOST_HOUSE_ROWS = range(7, 11)
 GHOST_HOUSE_COLS = range(9, 19)
@@ -82,6 +84,7 @@ for ghost in ghost_group:
 font = pygame.font.SysFont(None, 24)
 panel = ButtonPanel(SCREEN_WIDTH - 150, 100, 120, 40, 10, font)
 
+pacman_mode = "manual"
 ghost_mode = "random"
 show_paths= False
 def set_dfs():
@@ -96,11 +99,18 @@ def set_astar():
 def set_random():
     global ghost_mode
     ghost_mode = "random"
+def set_pacman_reflex():
+    global pacman_mode
+    pacman_mode = "reflex"
+
 
 panel.add_button("DFS", set_dfs)
 panel.add_button("BFS", set_bfs)
 panel.add_button("A*", set_astar)
 panel.add_button("Random", set_random)
+panel.add_button("Reflex", set_pacman_reflex)
+#panel.add_button("Minimax", set_minimax)
+#panel.add_button("AlphaBeta", set_alphabeta)
 
 running = True
 while running:
@@ -130,19 +140,38 @@ while running:
 
     keys = pygame.key.get_pressed()
 
-    player.update(keys, walls_group)
+    if pacman_mode == "manual":
+        player.update(keys, walls_group)
+    elif pacman_mode == "reflex":
+        player.reflex_update(walls_group, ghost_group, pellets_group, energizers_group)
 
-    collided_ghosts = pygame.sprite.spritecollide(player, ghost_group, False)
-    for ghost in collided_ghosts:
-        if ghost.frightened:
-            points += 200
-            ghost.reset_position()
-            print("Ghost eaten! +200")
-        else:
-            points -= 500
-            if points < 0:
-                print("Pac-Man caught! GAME OVER")
-                running = False
+    current_time = pygame.time.get_ticks()
+
+    if not player.invincible:
+        collided_ghosts = pygame.sprite.spritecollide(player, ghost_group, False)
+        
+        if collided_ghosts:
+            for ghost in collided_ghosts:
+                if hasattr(ghost, 'frightened') and ghost.frightened:
+                    points += 200
+                    ghost.reset_position()
+                    print("Ghost eaten! +200")
+                else:
+                    points -= 500
+                    lives -= 1
+                    ghost.reset_position()
+                    if points < 0:
+                        points = 0
+                        running = False
+                    
+                    player.invincible = True
+                    player.invincible_timer = current_time
+                    player.blink_timer = current_time
+                    
+                    player.rect.x = 3 * TILE_SIZE
+                    player.rect.y = 3 * TILE_SIZE
+                    
+                    break
 
     for ghost in ghost_group:
         ghost.update(player, mode=ghost_mode)  
@@ -157,6 +186,7 @@ while running:
     panel.draw(screen)
     score_text = font.render(f"Points: {points}", True, (255, 255, 255))
     screen.blit(score_text, (SCREEN_WIDTH - 140, 50))
+    heart(screen, lives, SCREEN_WIDTH - 140, 10, size=20)
 
     if show_paths:
         for ghost in ghost_group:
