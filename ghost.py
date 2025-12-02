@@ -344,3 +344,113 @@ class Ghost(pygame.sprite.Sprite):
     
     def reset_position(self):
         self.rect.topleft = (self.start_x, self.start_y)
+
+    def dfs_full_path(self, start, goal):
+        stack = [start]
+        visited = {start: None}
+
+        while stack:
+            current = stack.pop()
+            if current == goal:
+                break
+
+            cx, cy = current
+            #ordinea vecinilor influenteaza dfs
+            neighbors = [(cx+1, cy), (cx-1, cy), (cx, cy+1), (cx, cy-1)]
+
+            for nx, ny in neighbors:
+                if (0<=nx<len(self.maze[0]) and
+                        0<=ny<len(self.maze) and
+                        self.maze[ny][nx] != 1 and
+                        (nx, ny) not in visited):
+                    visited[(nx, ny)] = current
+                    stack.append((nx, ny))
+
+        #dacă nu gaseste drumul
+        if goal not in visited:
+            return []
+
+        #construire path complet
+        path = []
+        cur = goal
+        while cur != start:
+            path.append(cur)
+            cur = visited[cur]
+        path.reverse()
+        return path
+
+    def bfs_full_path(self, start, goal):
+        from collections import deque
+        queue = deque([start])
+        visited = {start: None}
+
+        while queue:
+            current = queue.popleft()
+            if current == goal:
+                break
+
+            cx, cy = current
+            for nx, ny in [(cx+1, cy), (cx-1, cy), (cx, cy+1), (cx, cy-1)]:
+                if (0<=nx<len(self.maze[0]) and 0<=ny<len(self.maze)):
+                    if self.maze[ny][nx] != 1 and (nx, ny) not in visited:
+                        visited[(nx, ny)] = current
+                        queue.append((nx, ny))
+
+        if goal not in visited:
+            return []
+
+        #construire path complet
+        path = []
+        cur = goal
+        while cur != start:
+            path.append(cur)
+            cur = visited[cur]
+        path.reverse()
+        return path
+
+    def astar_full_path(self, start, goal):
+        import heapq
+        count = 0
+        open_heap = []
+        heapq.heappush(open_heap, (0, count, start))
+
+        came_from = {}
+        g_score = {start: 0}
+        f_score = {start: self.hmd(start, goal)}
+        open_set = {start}
+
+        while open_heap:
+            current = heapq.heappop(open_heap)[2]
+            open_set.remove(current)
+
+            if current == goal:
+                break
+
+            cx, cy = current
+            for nx, ny in [(cx+1, cy), (cx-1, cy), (cx, cy+1), (cx, cy-1)]:
+                if (0<=nx<len(self.maze[0]) and
+                        0<=ny<len(self.maze) and
+                        self.maze[ny][nx] != 1):
+
+                    tg = g_score[current]+1
+                    if (nx, ny) not in g_score or tg < g_score[(nx, ny)]:
+                        came_from[(nx, ny)] = current
+                        g_score[(nx, ny)] = tg
+                        f_score[(nx, ny)] = tg + self.hmd((nx, ny), goal)
+
+                        if (nx, ny) not in open_set:
+                            count += 1
+                            heapq.heappush(open_heap, (f_score[(nx, ny)], count, (nx, ny)))
+                            open_set.add((nx, ny))
+
+        if goal not in came_from:
+            return []
+
+        #construire path complet
+        path = []
+        cur = goal
+        while cur != start:
+            path.append(cur)
+            cur = came_from[cur]
+        path.reverse()
+        return path
