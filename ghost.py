@@ -454,3 +454,5 @@ class Ghost(pygame.sprite.Sprite):
             cur = came_from[cur]
         path.reverse()
         return path
+
+
