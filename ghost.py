@@ -6,7 +6,7 @@ from settings import BLUE_BUHUHU
 import heapq
 
 class Ghost(pygame.sprite.Sprite):
-    def __init__(self, x, y, maze, color):
+    def __init__(self, x, y, maze, color, ghost_type):
         super().__init__()
         
         self.image = pygame.Surface((TILE_SIZE, TILE_SIZE)).convert_alpha()
@@ -22,13 +22,13 @@ class Ghost(pygame.sprite.Sprite):
         pygame.draw.rect(self.image, self.color, body_rect, border_radius = T // 4)
         pygame.draw.circle(self.image, self.color, (T // 2, T // 2), T // 2)
 
-        # eye_radius = T // 6
-        # pupil_radius = T // 12
-        # pygame.draw.circle(self.image, (255, 255, 255), (T // 3, T // 3), eye_radius)
-        # pygame.draw.circle(self.image, (0, 0, 0), (T // 3, T // 3), pupil_radius)
+        self.state = "scatter"
+        self.state_timer = pygame.time.get_ticks()
 
-        # pygame.draw.circle(self.image, (255, 255, 255), (T * 2 // 3, T // 3), eye_radius)
-        # pygame.draw.circle(self.image, (0, 0, 0), (T * 2 // 3, T // 3), pupil_radius)
+        self.scatter_duration = 7000
+        self.chase_duration  = 20000
+
+        self.permanent_chase = False
         self.rect = self.image.get_rect(topleft=(x, y))
 
         self.maze = maze  
@@ -36,6 +36,7 @@ class Ghost(pygame.sprite.Sprite):
         self.speed = 2
         self.direction = random.choice([(1,0),(-1,0),(0,1),(0,-1)])
         self.walls_group = None
+        self.ghost_type = ghost_type
 
     def update_eyes(self):
         T = TILE_SIZE
@@ -249,40 +250,74 @@ class Ghost(pygame.sprite.Sprite):
             step = came_from[step]
         return step
 
+    def update_state(self):
+        current = pygame.time.get_ticks()
+
+        if self.frightened:
+            if current - self.frightened_timer_start >= self.frightened_duration:
+                self.frightened = False
+                self.color = self.original_color
+                self.speed = 2
+                self.state_timer = current
+            return
+
+        if self.permanent_chase:
+            self.state = "chase"
+            return
+
+        if self.state == "scatter":
+            if current - self.state_timer >= self.scatter_duration:
+                self.state = "chase"
+                self.state_timer = current
+
+        elif self.state == "chase":
+            if current - self.state_timer >= self.chase_duration:
+                self.state = "scatter"
+                self.state_timer = current
+
+            if current >= 120000:
+                self.permanent_chase = True
+
     def update(self, player, mode="random"):
-        if hasattr(self, "mode") and self.mode == "frightened":
-            mode = "frightened"
+        # if hasattr(self, "mode") and self.mode == "frightened":
+        #     mode = "frightened"
+        self.update_state()
         if self.at_tile_center():
             start = self.get_tile()
             px = player.rect.centerx // TILE_SIZE
             py = player.rect.centery // TILE_SIZE
             goal = (px, py)
-            
-            if mode == "random":
-                self.random_ai()
-            elif mode == "chase":
-                self.chase_ai(player)
-            elif mode == "bfs":
-                next_tile = self.bfs(start, goal)
-                if next_tile:
-                    self.move_to_tile(next_tile)
-            elif mode == "dfs":
-                next_tile = self.dfs(start, goal)
-                if next_tile:
-                    self.move_to_tile(next_tile)
-            elif mode == "astar":
-                next_tile = self.astar(start, goal)
-                if next_tile:
-                    self.move_to_tile(next_tile)
-            elif mode == "frightened":
-                self.speed = 1
-                self.frightened = True
-                self.random_ai()
-                if pygame.time.get_ticks() - self.frightened_timer_start > self.frightened_duration:
-                    self.speed = 2
-                    self.frightened = False
-                    self.mode = None
-                    self.color = self.original_color
+
+            if self.frightened:
+                mode = "frightened"
+            if not self.frightened and self.state == "scatter":
+                self.scatter_ai()
+            else:
+                if mode == "random":
+                    self.random_ai()
+                elif mode == "chase":
+                    self.chase_ai(player)
+                elif mode == "bfs":
+                    next_tile = self.bfs(start, goal)
+                    if next_tile:
+                        self.move_to_tile(next_tile)
+                elif mode == "dfs":
+                    next_tile = self.dfs(start, goal)
+                    if next_tile:
+                        self.move_to_tile(next_tile)
+                elif mode == "astar":
+                    next_tile = self.astar(start, goal)
+                    if next_tile:
+                        self.move_to_tile(next_tile)
+                elif mode == "frightened":
+                    self.speed = 1
+                    ##self.frightened = True
+                    self.random_ai()
+                    # if pygame.time.get_ticks() - self.frightened_timer_start > self.frightened_duration:
+                    #     self.speed = 2
+                    #     self.frightened = False
+                    #     self.mode = None
+                    #     self.color = self.original_color
 
         old_x, old_y = self.rect.x, self.rect.y
         if len(self.direction) == 2:
@@ -308,6 +343,27 @@ class Ghost(pygame.sprite.Sprite):
         if self.rect.bottom > maze_height:
             self.rect.bottom = maze_height
         self.update_eyes()
+
+    def scatter_ai(self):
+        start = self.get_tile()
+
+        if hasattr(self, 'ghost_type'):
+            if self.ghost_type == "blinky":
+                target = (len(self.maze[0]) - 2, 1)
+            elif self.ghost_type == "pinky":
+                target = (1, 1)
+            elif self.ghost_type == "inky":
+                target = (len(self.maze[0]) - 2, len(self.maze) - 2)
+            elif self.ghost_type == "clyde":
+                target = (1, len(self.maze) - 2)
+        else:
+            target = (1, 1)
+        
+        next_tile = self.bfs(start, target)
+        if next_tile:
+            self.move_to_tile(next_tile)
+        else:
+            self.random_ai()
 
 
     def move_to_tile(self, next_tile):

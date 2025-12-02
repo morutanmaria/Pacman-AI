@@ -73,10 +73,10 @@ player_mode = "manual"
 
 ghost_group = pygame.sprite.Group()
 
-ghost_group.add(Ghost(9 * TILE_SIZE, 8 * TILE_SIZE, MAZE, BLINKY))     
-ghost_group.add(Ghost(16 * TILE_SIZE, 8 * TILE_SIZE, MAZE, PINKY))  
-ghost_group.add(Ghost(9 * TILE_SIZE, 9 * TILE_SIZE, MAZE, INKY))  
-ghost_group.add(Ghost(16* TILE_SIZE, 9 * TILE_SIZE, MAZE, CLYDE)) 
+ghost_group.add(Ghost(9 * TILE_SIZE, 8 * TILE_SIZE, MAZE, BLINKY, "blinky"))     
+ghost_group.add(Ghost(16 * TILE_SIZE, 8 * TILE_SIZE, MAZE, PINKY, "pinky"))  
+ghost_group.add(Ghost(9 * TILE_SIZE, 9 * TILE_SIZE, MAZE, INKY, "inky"))  
+ghost_group.add(Ghost(16* TILE_SIZE, 9 * TILE_SIZE, MAZE, CLYDE, "clyde")) 
 
 for ghost in ghost_group:
     ghost.set_walls(walls_group)
