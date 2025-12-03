@@ -217,12 +217,12 @@ while running:
                     if lives == 0:
                         lost_font = pygame.font.SysFont(None, 35)  
 
-                        lost_text = win_font.render("YOU LOST!", True, (255, 255, 0))
+                        lost_text = lost_font.render("YOU LOST!", True, (255, 255, 0))
 
                         text_x = SCREEN_WIDTH - 150 + 15
                         text_y = 470  
 
-                        screen.blit(win_text, (text_x, text_y))
+                        screen.blit(lost_text, (text_x, text_y))
                         pygame.display.flip()
                         pygame.time.wait(3000)
                         running = False
