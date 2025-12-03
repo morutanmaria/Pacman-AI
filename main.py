@@ -1,15 +1,16 @@
 import pygame
 import sys
+import random
 
 from settings import *
 from player import Player
 from ghost import Ghost
-from level import MAZE   
+from level import MAZE
 
 MAZE_WIDTH = len(MAZE[0]) * TILE_SIZE
 MAZE_HEIGHT = len(MAZE) * TILE_SIZE
 
-SCREEN_WIDTH = MAZE_WIDTH + 150 
+SCREEN_WIDTH = MAZE_WIDTH + 150
 SCREEN_HEIGHT = MAZE_HEIGHT
 
 pygame.init()
@@ -20,7 +21,7 @@ clock = pygame.time.Clock()
 
 
 from wall import Wall
-from pellet import Pellet 
+from pellet import Pellet
 from energizer import Energizer
 from buttonPanel import ButtonPanel
 from cherry import Cherry
@@ -33,7 +34,7 @@ energizers_group = pygame.sprite.Group()
 cherries_group = pygame.sprite.Group()
 
 points = 0
-lives = 3 
+lives = 3
 pellets_eaten = 0
 # cherry spawn logic
 CHERRY_THRESHOLDS = [70, 170]
@@ -42,6 +43,17 @@ cherry_active = False
 cherry_spawn_time = None   #cand apare (ms)
 CHERRY_DURATION = 8000   # 8 secunde
 CHERRY_SCORE = 100
+
+
+PORTAL_COL = len(MAZE[0]) - 2
+PORTAL_ROW = 10
+
+PORTAL_DESTINATIONS = [
+    (1, 1),       # stanga sus
+    (1, len(MAZE) - 2),     # stanga jos
+    (len(MAZE[0]) - 2, 1)   # dreapta sus
+]
+
 
 GHOST_HOUSE_ROWS = range(9, 13)
 GHOST_HOUSE_COLS = range(10, 20)
@@ -64,7 +76,7 @@ def spawn_cherry_under_house():
 
 for row_idx, row in enumerate(MAZE):
     for col_idx, tile in enumerate(row):
-        if tile == 1:  
+        if tile == 1:
             wall = Wall(
                 col_idx * TILE_SIZE,
                 row_idx * TILE_SIZE,
@@ -73,11 +85,13 @@ for row_idx, row in enumerate(MAZE):
             )
             walls_group.add(wall)
         elif tile == 0:
-                pellet = Pellet(
-                    col_idx * TILE_SIZE + TILE_SIZE//2,
-                    row_idx * TILE_SIZE + TILE_SIZE//2
-                )
-                pellets_group.add(pellet)
+            #nu pune pellet pe portal
+            if not (row_idx == PORTAL_ROW and col_idx == PORTAL_COL):
+                if not (row_idx == PORTAL_ROW and col_idx == PORTAL_COL):
+                    pellets_group.add(
+                        Pellet(col_idx * TILE_SIZE + TILE_SIZE // 2,
+                               row_idx * TILE_SIZE + TILE_SIZE // 2)
+                    )
         elif tile == 2:
             energizer = Energizer(
                 col_idx * TILE_SIZE + TILE_SIZE//2,
@@ -92,10 +106,10 @@ player_mode = "manual"
 
 ghost_group = pygame.sprite.Group()
 
-ghost_group.add(Ghost(12 * TILE_SIZE, 10 * TILE_SIZE, MAZE, BLINKY, "blinky"))     
-ghost_group.add(Ghost(16 * TILE_SIZE, 10 * TILE_SIZE, MAZE, PINKY, "pinky"))  
-ghost_group.add(Ghost(12 * TILE_SIZE, 9 * TILE_SIZE, MAZE, INKY, "inky"))  
-ghost_group.add(Ghost(16* TILE_SIZE, 9 * TILE_SIZE, MAZE, CLYDE, "clyde")) 
+ghost_group.add(Ghost(12 * TILE_SIZE, 10 * TILE_SIZE, MAZE, BLINKY, "blinky"))
+ghost_group.add(Ghost(16 * TILE_SIZE, 10 * TILE_SIZE, MAZE, PINKY, "pinky"))
+ghost_group.add(Ghost(12 * TILE_SIZE, 9 * TILE_SIZE, MAZE, INKY, "inky"))
+ghost_group.add(Ghost(16* TILE_SIZE, 9 * TILE_SIZE, MAZE, CLYDE, "clyde"))
 
 for ghost in ghost_group:
     ghost.set_walls(walls_group)
@@ -126,6 +140,17 @@ def set_minimax():
 def set_manual():
     global player_mode
     player_mode = "manual"
+
+def check_portal_teleport(sprite):
+    tile_x = sprite.rect.centerx // TILE_SIZE
+    tile_y = sprite.rect.centery // TILE_SIZE
+
+    if tile_x == PORTAL_COL and tile_y == PORTAL_ROW:
+        # alegem destinație random din cele trei
+        dest_tile = random.choice(PORTAL_DESTINATIONS)
+        sprite.rect.centerx = dest_tile[0] * TILE_SIZE + TILE_SIZE // 2
+        sprite.rect.centery = dest_tile[1] * TILE_SIZE + TILE_SIZE // 2
+
 
 panel.add_button("DFS", set_dfs)
 panel.add_button("BFS", set_bfs)
@@ -177,6 +202,8 @@ while running:
     else:
         player.auto_update(walls_group, pellets_group, energizers_group, ghost_group, player_mode)
 
+    check_portal_teleport(player)
+
     current_time = pygame.time.get_ticks()
 
     #apare cherry la prag (doar o data apare cand atingi pragul intr-un meci)
@@ -200,7 +227,7 @@ while running:
 
     if not player.invincible:
         collided_ghosts = pygame.sprite.spritecollide(player, ghost_group, False)
-        
+
         if collided_ghosts:
             for ghost in collided_ghosts:
                 if ghost.eaten:
@@ -216,29 +243,30 @@ while running:
                     if points < 0:
                         points = 0
                     if lives == 0:
-                        lost_font = pygame.font.SysFont(None, 35)  
+                        lost_font = pygame.font.SysFont(None, 35)
 
                         lost_text = lost_font.render("YOU LOST!", True, (255, 255, 0))
 
                         text_x = SCREEN_WIDTH - 150 + 15
-                        text_y = 470  
+                        text_y = 470
 
                         screen.blit(lost_text, (text_x, text_y))
                         pygame.display.flip()
                         pygame.time.wait(3000)
                         running = False
-                    
+
                     player.invincible = True
                     player.invincible_timer = current_time
                     player.blink_timer = current_time
-                    
+
                     player.rect.x = 13 * TILE_SIZE
                     player.rect.y = 13 * TILE_SIZE
-                    
+
                     break
 
     for ghost in ghost_group:
-        ghost.update(player, mode=ghost_mode)  
+        ghost.update(player, mode=ghost_mode)
+        check_portal_teleport(ghost)
 
     screen.fill(BLACK)
 
@@ -275,15 +303,23 @@ while running:
                 path = ghost.astar_full_path(start, player_tile)
                 draw_path(screen, path, ghost_color)
 
+
+    pygame.draw.rect(
+         screen,
+        (150, 0, 200),  # mov
+        (PORTAL_COL * TILE_SIZE, PORTAL_ROW * TILE_SIZE, TILE_SIZE, TILE_SIZE),
+        3  # doar contur
+        )
+
     pygame.display.flip()
 
     if len(pellets_group) == 0 and len(energizers_group) == 0:
-        win_font = pygame.font.SysFont(None, 35)  
+        win_font = pygame.font.SysFont(None, 35)
 
         win_text = win_font.render("YOU WIN!", True, (255, 255, 0))
 
         text_x = SCREEN_WIDTH - 150 + 15
-        text_y = 470  
+        text_y = 470
 
         screen.blit(win_text, (text_x, text_y))
         pygame.display.flip()
