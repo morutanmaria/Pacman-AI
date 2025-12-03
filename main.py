@@ -214,6 +214,17 @@ while running:
                     ghost.reset_position()
                     if points < 0:
                         points = 0
+                    if lives == 0:
+                        lost_font = pygame.font.SysFont(None, 35)  
+
+                        lost_text = win_font.render("YOU LOST!", True, (255, 255, 0))
+
+                        text_x = SCREEN_WIDTH - 150 + 15
+                        text_y = 470  
+
+                        screen.blit(win_text, (text_x, text_y))
+                        pygame.display.flip()
+                        pygame.time.wait(3000)
                         running = False
                     
                     player.invincible = True
@@ -265,6 +276,18 @@ while running:
 
     pygame.display.flip()
 
+    if len(pellets_group) == 0 and len(energizers_group) == 0:
+        win_font = pygame.font.SysFont(None, 35)  
+
+        win_text = win_font.render("YOU WIN!", True, (255, 255, 0))
+
+        text_x = SCREEN_WIDTH - 150 + 15
+        text_y = 470  
+
+        screen.blit(win_text, (text_x, text_y))
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        running = False
 
 pygame.quit()
 sys.exit()
