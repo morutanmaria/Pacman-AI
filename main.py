@@ -206,7 +206,7 @@ while running:
             for ghost in collided_ghosts:
                 if hasattr(ghost, 'frightened') and ghost.frightened:
                     points += 200
-                    ghost.reset_position()
+                    ghost.eaten = True
                     print("Ghost eaten! +200")
                 else:
                     points -= 500

@@ -37,6 +37,7 @@ class Ghost(pygame.sprite.Sprite):
         self.direction = random.choice([(1,0),(-1,0),(0,1),(0,-1)])
         self.walls_group = None
         self.ghost_type = ghost_type
+        self.eaten = False
 
     def update_eyes(self):
         T = TILE_SIZE
@@ -278,19 +279,61 @@ class Ghost(pygame.sprite.Sprite):
             if current >= 120000:
                 self.permanent_chase = True
 
+    def return_to_house(self):
+        self.speed = 4
+        start = self.get_tile()
+        goal = (self.start_x // TILE_SIZE, self.start_y // TILE_SIZE)
+        if start == goal:
+            self.eaten = False
+            self.speed = 2
+            self.frightened = False
+            self.color = self.original_color
+            return
+        next_tile = self.astar(start, goal)
+        if next_tile:
+            self.move_to_tile(next_tile)
+        else:
+            next_tile = self.bfs(start, goal)
+            if next_tile:
+                self.move_to_tile(next_tile)
+
+    def draw_eyes_only(self):
+        T = TILE_SIZE
+        self.image.fill((0, 0, 0, 0))
+        
+        dx, dy = self.direction
+        offset = T // 8
+        ox = dx * offset
+        oy = dy * offset
+    
+        eye_radius = T // 4
+        pupil_radius = T // 8
+        
+        pygame.draw.circle(self.image, (255, 255, 255), (T//3, T//3), eye_radius)
+        pygame.draw.circle(self.image, (255, 255, 255), (2*T//3, T//3), eye_radius)
+        pygame.draw.circle(self.image, (0, 0, 0), (T//3 + ox, T//3 + oy), pupil_radius)
+        pygame.draw.circle(self.image, (0, 0, 0), (2*T//3 + ox, T//3 + oy), pupil_radius)
+
     def update(self, player, mode="random"):
         # if hasattr(self, "mode") and self.mode == "frightened":
         #     mode = "frightened"
         self.update_state()
         if self.at_tile_center():
             start = self.get_tile()
+            if 7 <= start[1] <= 10 and 9 <= start[0] <= 18:
+                gate = (13, 7)
+                next_tile = self.astar(start, gate)
+                if next_tile:
+                    self.move_to_tile(next_tile)
             px = player.rect.centerx // TILE_SIZE
             py = player.rect.centery // TILE_SIZE
             goal = (px, py)
 
-            if self.frightened:
+            if self.frightened and not self.eaten:
                 mode = "frightened"
-            if not self.frightened and self.state == "scatter":
+            if self.eaten:
+                mode = "eaten"
+            if not self.frightened and self.state == "scatter" and not self.eaten:
                 self.scatter_ai()
             else:
                 if mode == "random":
@@ -309,6 +352,8 @@ class Ghost(pygame.sprite.Sprite):
                     next_tile = self.astar(start, goal)
                     if next_tile:
                         self.move_to_tile(next_tile)
+                elif mode == "eaten":
+                    self.return_to_house()
                 elif mode == "frightened":
                     self.speed = 1
                     ##self.frightened = True
@@ -342,11 +387,19 @@ class Ghost(pygame.sprite.Sprite):
             self.rect.top = 0
         if self.rect.bottom > maze_height:
             self.rect.bottom = maze_height
-        self.update_eyes()
+        if self.eaten == True:
+            self.draw_eyes_only()
+        else:
+            self.update_eyes()
 
     def scatter_ai(self):
         start = self.get_tile()
-
+        if 7 <= start[1] <= 10 and 9 <= start[0] <= 18:
+            gate = (13, 7)
+            next_tile = self.astar(start, gate)
+            if next_tile:
+                self.move_to_tile(next_tile)
+            return
         if hasattr(self, 'ghost_type'):
             if self.ghost_type == "blinky":
                 target = (len(self.maze[0]) - 2, 1)
