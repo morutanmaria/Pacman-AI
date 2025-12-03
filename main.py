@@ -34,7 +34,7 @@ cherries_group = pygame.sprite.Group()
 
 points = 0
 lives = 3 
-
+pellets_eaten = 0
 # cherry spawn logic
 CHERRY_THRESHOLDS = [70, 170]
 cherry_spawned_flags = {t: False for t in CHERRY_THRESHOLDS}
@@ -159,6 +159,7 @@ while running:
 
     eaten_pellet = pygame.sprite.spritecollide(player, pellets_group, True)
     if eaten_pellet:
+        pellets_eaten += 1
         points += 10
         print("Yum! Pretty good")
 
@@ -181,7 +182,7 @@ while running:
     #apare cherry la prag (doar o data apare cand atingi pragul intr-un meci)
     #apare doar daca nu este alt cherry deja pe harta
     for t in CHERRY_THRESHOLDS:
-        if points >= t and not cherry_spawned_flags[t] and not cherry_active:
+        if pellets_eaten >= t and not cherry_spawned_flags[t] and not cherry_active:
             cherry = spawn_cherry_under_house()
             cherries_group.add(cherry)
             cherry_active = True
@@ -202,6 +203,8 @@ while running:
         
         if collided_ghosts:
             for ghost in collided_ghosts:
+                if ghost.eaten:
+                    continue
                 if hasattr(ghost, 'frightened') and ghost.frightened:
                     points += 200
                     ghost.eaten = True

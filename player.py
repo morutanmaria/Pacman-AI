@@ -31,6 +31,11 @@ class Player(pygame.sprite.Sprite):
         self.invincible_duration = 2000
         self.visible = True
         self.blink_timer = 0
+
+        self.mouth_angle = 30
+        self.mouth_opening = False 
+        self.mouth_speed = 4 
+
         
 
     def _is_food_tile(self, tile, pellets_group, energizers_group):
@@ -113,6 +118,21 @@ class Player(pygame.sprite.Sprite):
             self.redraw()
         else:
             self.image.fill((0, 0, 0, 0))
+        
+        if dx != 0 or dy != 0:
+            if self.mouth_opening:
+                self.mouth_angle += self.mouth_speed
+                if self.mouth_angle >= 30:
+                    self.mouth_angle = 30
+                    self.mouth_opening = False
+            else:
+                self.mouth_angle -= self.mouth_speed
+                if self.mouth_angle <= 0:
+                    self.mouth_angle = 0
+                    self.mouth_opening = True
+        else:
+            self.mouth_angle = 0
+
 
     def redraw(self):
         self.image.fill((0, 0, 0, 0))
@@ -536,6 +556,19 @@ class Player(pygame.sprite.Sprite):
                 elif dy < 0:
                     self.rect.top = wall.rect.bottom
             self.rect.centerx = (self.rect.centerx // TILE_SIZE) * TILE_SIZE + TILE_SIZE // 2
-            
+        if dx != 0 or dy != 0:
+            if self.mouth_opening:
+                self.mouth_angle += self.mouth_speed
+                if self.mouth_angle >= 30:
+                    self.mouth_angle = 30
+                    self.mouth_opening = False
+            else:
+                self.mouth_angle -= self.mouth_speed
+                if self.mouth_angle <= 0:
+                    self.mouth_angle = 0
+                    self.mouth_opening = True
+        else:
+            self.mouth_angle = 0 
+
         self.redraw()
                 
