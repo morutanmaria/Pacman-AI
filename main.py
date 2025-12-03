@@ -43,9 +43,8 @@ cherry_spawn_time = None   #cand apare (ms)
 CHERRY_DURATION = 8000   # 8 secunde
 CHERRY_SCORE = 100
 
-
-GHOST_HOUSE_ROWS = range(7, 11)
-GHOST_HOUSE_COLS = range(9, 19)
+GHOST_HOUSE_ROWS = range(9, 13)
+GHOST_HOUSE_COLS = range(10, 20)
 
 def draw_path(surface, path, color=(0, 255, 0)):
     for (tx, ty) in path:
@@ -74,7 +73,6 @@ for row_idx, row in enumerate(MAZE):
             )
             walls_group.add(wall)
         elif tile == 0:
-            if not (row_idx in GHOST_HOUSE_ROWS and col_idx in GHOST_HOUSE_COLS):
                 pellet = Pellet(
                     col_idx * TILE_SIZE + TILE_SIZE//2,
                     row_idx * TILE_SIZE + TILE_SIZE//2
@@ -88,15 +86,15 @@ for row_idx, row in enumerate(MAZE):
             energizers_group.add(energizer)
 
 
-player = Player(3 * TILE_SIZE, 3 * TILE_SIZE, MAZE)
+player = Player(14 * TILE_SIZE, 14 * TILE_SIZE, MAZE)
 player_group = pygame.sprite.Group(player)
 player_mode = "manual"
 
 ghost_group = pygame.sprite.Group()
 
-ghost_group.add(Ghost(9 * TILE_SIZE, 8 * TILE_SIZE, MAZE, BLINKY, "blinky"))     
-ghost_group.add(Ghost(16 * TILE_SIZE, 8 * TILE_SIZE, MAZE, PINKY, "pinky"))  
-ghost_group.add(Ghost(9 * TILE_SIZE, 9 * TILE_SIZE, MAZE, INKY, "inky"))  
+ghost_group.add(Ghost(12 * TILE_SIZE, 10 * TILE_SIZE, MAZE, BLINKY, "blinky"))     
+ghost_group.add(Ghost(16 * TILE_SIZE, 10 * TILE_SIZE, MAZE, PINKY, "pinky"))  
+ghost_group.add(Ghost(12 * TILE_SIZE, 9 * TILE_SIZE, MAZE, INKY, "inky"))  
 ghost_group.add(Ghost(16* TILE_SIZE, 9 * TILE_SIZE, MAZE, CLYDE, "clyde")) 
 
 for ghost in ghost_group:
@@ -231,8 +229,8 @@ while running:
                     player.invincible_timer = current_time
                     player.blink_timer = current_time
                     
-                    player.rect.x = 3 * TILE_SIZE
-                    player.rect.y = 3 * TILE_SIZE
+                    player.rect.x = 13 * TILE_SIZE
+                    player.rect.y = 13 * TILE_SIZE
                     
                     break
 

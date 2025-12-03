@@ -320,8 +320,8 @@ class Ghost(pygame.sprite.Sprite):
         self.update_state()
         if self.at_tile_center():
             start = self.get_tile()
-            if 7 <= start[1] <= 10 and 9 <= start[0] <= 18:
-                gate = (13, 7)
+            if 9 <= start[1] <= 13 and 10 <= start[0] <= 18:
+                gate = (14, 8)
                 next_tile = self.astar(start, gate)
                 if next_tile:
                     self.move_to_tile(next_tile)
@@ -394,8 +394,8 @@ class Ghost(pygame.sprite.Sprite):
 
     def scatter_ai(self):
         start = self.get_tile()
-        if 7 <= start[1] <= 10 and 9 <= start[0] <= 18:
-            gate = (13, 7)
+        if 9 <= start[1] <= 13 and 10 <= start[0] <= 18:
+            gate = (14, 8)
             next_tile = self.astar(start, gate)
             if next_tile:
                 self.move_to_tile(next_tile)
