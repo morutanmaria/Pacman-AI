@@ -104,8 +104,9 @@ class Player(pygame.sprite.Sprite):
                     self.rect.right = wall.rect.left
                 elif dx < 0:
                     self.rect.left = wall.rect.right
-
-
+            self.direction = (0, 0)
+            return
+        
         self.rect.y += dy
         collided_walls = pygame.sprite.spritecollide(self, walls, False)
         if collided_walls:
@@ -114,6 +115,9 @@ class Player(pygame.sprite.Sprite):
                     self.rect.bottom = wall.rect.top
                 elif dy < 0:
                     self.rect.top = wall.rect.bottom
+            self.direction = (0, 0)
+            return
+            
         if not self.invincible or self.visible:
             self.redraw()
         else:
@@ -519,16 +523,29 @@ class Player(pygame.sprite.Sprite):
         
         return SimulatedState(player_tile, ghost_tiles, self.maze, pellets_left, energizers_left)
 
-    def auto_update(self, walls, pellets_group, energizers_group, ghosts_group, player_mode):
+    def auto_update(self, keys_pressed, walls, pellets_group, energizers_group, ghosts_group, player_mode):
  
+        #not sure about this
         next_direction = self.direction
+        if keys_pressed[pygame.K_LEFT]:
+            dx = -self.speed
+            self.direction = (-1, 0)
+        if keys_pressed[pygame.K_RIGHT]:
+            dx = self.speed
+            self.direction = (1, 0)
+        if keys_pressed[pygame.K_UP]:
+            dy = -self.speed
+            self.direction = (0, -1)
+        if keys_pressed[pygame.K_DOWN]:
+            dy = self.speed
+            self.direction = (0, 1)
         
         if self.at_tile_center():
             if player_mode == "reflex":
                 next_direction = self.find_next_best_move(pellets_group, energizers_group, ghosts_group, player_mode)
             elif player_mode == "minimax":
                 current_state = self.get_current_simulated_state(ghosts_group, pellets_group, energizers_group)
-                next_direction = self.choose_minimax_move(current_state, search_depth=3)
+                next_direction = self.choose_minimax_move(current_state, search_depth=2)
             self.set_direction(next_direction)
         
         dir_x, dir_y = self.direction
@@ -544,6 +561,7 @@ class Player(pygame.sprite.Sprite):
                     self.rect.right = wall.rect.left
                 elif dx < 0: 
                     self.rect.left = wall.rect.right
+            dx = 0
             self.rect.centery = (self.rect.centery // TILE_SIZE) * TILE_SIZE + TILE_SIZE // 2
             
         self.rect.y += dy
@@ -556,6 +574,7 @@ class Player(pygame.sprite.Sprite):
                 elif dy < 0:
                     self.rect.top = wall.rect.bottom
             self.rect.centerx = (self.rect.centerx // TILE_SIZE) * TILE_SIZE + TILE_SIZE // 2
+
         if dx != 0 or dy != 0:
             if self.mouth_opening:
                 self.mouth_angle += self.mouth_speed

@@ -101,6 +101,8 @@ for row_idx, row in enumerate(MAZE):
 
 
 player = Player(14 * TILE_SIZE, 14 * TILE_SIZE, MAZE)
+player.rect.centerx = (player.rect.centerx // TILE_SIZE) * TILE_SIZE + TILE_SIZE // 2
+player.rect.centery = (player.rect.centery // TILE_SIZE) * TILE_SIZE + TILE_SIZE // 2
 player_group = pygame.sprite.Group(player)
 player_mode = "manual"
 
@@ -200,7 +202,7 @@ while running:
     if player_mode == "manual":
         player.update(keys, walls_group)
     else:
-        player.auto_update(walls_group, pellets_group, energizers_group, ghost_group, player_mode)
+        player.auto_update(keys, walls_group, pellets_group, energizers_group, ghost_group, player_mode)
 
     check_portal_teleport(player)
 
@@ -261,6 +263,8 @@ while running:
 
                     player.rect.x = 13 * TILE_SIZE
                     player.rect.y = 13 * TILE_SIZE
+                    player.rect.centerx = (player.rect.centerx // TILE_SIZE) * TILE_SIZE + TILE_SIZE // 2
+                    player.rect.centery = (player.rect.centery // TILE_SIZE) * TILE_SIZE + TILE_SIZE // 2
 
                     break
 
