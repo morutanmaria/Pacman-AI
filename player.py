@@ -15,6 +15,11 @@ class Player(pygame.sprite.Sprite):
         self.radius = 15
         self.current_mode = "manual"
         self.maze = maze
+        self.invincible = False
+        self.invincible_timer = 0 
+        self.invincible_duration = 2000
+        self.visible = True
+        self.blink_timer = 0
         pygame.draw.circle(self.image, PINK, (self.radius, self.radius), self.radius)
         pygame.draw.circle(self.image, PINK, (30 // 2, 30 // 2), 30 // 2)
 
@@ -525,7 +530,17 @@ class Player(pygame.sprite.Sprite):
 
     def auto_update(self, keys_pressed, walls, pellets_group, energizers_group, ghosts_group, player_mode):
  
-        #not sure about this
+        current_time = pygame.time.get_ticks()
+        if self.invincible:
+            if current_time - self.invincible_timer > self.invincible_duration:
+                self.invincible = False
+                self.visible = True
+            else: 
+                if current_time - self.blink_timer > 100:
+                    self.visible = not self.visible
+                    self.blink_timer = current_time
+        if not self.visible and self.invincible:
+            pass
         next_direction = self.direction
         if keys_pressed[pygame.K_LEFT]:
             dx = -self.speed
