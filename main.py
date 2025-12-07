@@ -139,6 +139,9 @@ def set_reflex():
 def set_minimax():
     global player_mode
     player_mode = "minimax"
+def set_alphabeta():
+    global player_mode
+    player_mode = "alphabeta"
 def set_manual():
     global player_mode
     player_mode = "manual"
@@ -161,7 +164,8 @@ panel.add_button("Random", set_random)
 panel.add_button("Manual", set_manual)
 panel.add_button("Reflex", set_reflex)
 panel.add_button("Minimax", set_minimax)
-#panel.add_button("AlphaBeta", set_alphabeta)
+panel.add_button("AlphaBeta", set_alphabeta)
+
 
 running = True
 while running:

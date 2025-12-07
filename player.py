@@ -561,7 +561,12 @@ class Player(pygame.sprite.Sprite):
             elif player_mode == "minimax":
                 current_state = self.get_current_simulated_state(ghosts_group, pellets_group, energizers_group)
                 next_direction = self.choose_minimax_move(current_state, search_depth=2)
+            elif player_mode == "alphabeta":
+                current_state = self.get_current_simulated_state(ghosts_group, pellets_group, energizers_group)
+                next_direction = self.choose_alphabeta_move(current_state, search_depth=3)
+
             self.set_direction(next_direction)
+
         
         dir_x, dir_y = self.direction
         dx = dir_x * self.speed
@@ -606,3 +611,69 @@ class Player(pygame.sprite.Sprite):
 
         self.redraw()
                 
+    def alphabeta(self, state: SimulatedState, depth, alpha, beta, ghost_index):
+        if state.is_terminal() or depth == 0:
+         return self.evaluate_state(state)
+
+    #max layer pacman
+        if ghost_index == 0:
+            value = -float('inf')
+
+        for direction, next_tile in self.valid_moves(state.player_tile):
+            next_state = self.apply_pacman_move(state, next_tile)
+            score = self.alphabeta(next_state, depth, alpha, beta, ghost_index=1)
+            value = max(value, score)
+            alpha = max(alpha, value)
+
+            if alpha >= beta:
+                break  # prune
+
+        return value
+
+
+    #min layers ghosts
+        ghost_i = ghost_index - 1
+        value = float('inf')
+        current_ghost_tile = state.ghost_tiles[ghost_i]
+
+        for direction, next_tile in self.valid_moves(current_ghost_tile):
+            next_state = self.apply_ghost_move(state, ghost_i, next_tile)
+
+            if ghost_index == len(state.ghost_tiles):
+                next_gi = 0
+                next_depth = depth - 1
+            else:
+                next_gi = ghost_index + 1
+                next_depth = depth
+
+            score = self.alphabeta(next_state, next_depth, alpha, beta, next_gi)
+            value = min(value, score)
+            beta = min(beta, value)
+
+            if beta <= alpha:
+                break  # prune
+
+        return value
+    
+    def choose_alphabeta_move(self, current_game_state, search_depth=3):
+        best_score = -float('inf')
+        best_direction = self.direction
+
+        for direction, next_tile in self.valid_moves(current_game_state.player_tile):
+            next_state = self.apply_pacman_move(current_game_state, next_tile)
+
+            score = self.alphabeta(next_state, search_depth,
+                               alpha=-float('inf'),
+                               beta=float('inf'),
+                               ghost_index=1)
+
+            if score > best_score:
+                best_score = score
+                best_direction = direction
+
+            elif score == best_score and direction == self.direction:
+                best_direction = direction
+
+        return best_direction
+
+            
