@@ -563,7 +563,7 @@ class Player(pygame.sprite.Sprite):
                 next_direction = self.choose_minimax_move(current_state, search_depth=2)
             elif player_mode == "alphabeta":
                 current_state = self.get_current_simulated_state(ghosts_group, pellets_group, energizers_group)
-                next_direction = self.choose_alphabeta_move(current_state, search_depth=3)
+                next_direction = self.choose_alphabeta_move(current_state, search_depth=2)
 
             self.set_direction(next_direction)
 
@@ -610,51 +610,52 @@ class Player(pygame.sprite.Sprite):
             self.mouth_angle = 0 
 
         self.redraw()
-                
+    #merge dar cu lag din cauza complexitatii, am redus depth-ul la 2       
     def alphabeta(self, state: SimulatedState, depth, alpha, beta, ghost_index):
-        if state.is_terminal() or depth == 0:
-         return self.evaluate_state(state)
+        num_ghosts = len(state.ghost_tiles)
 
-    #max layer pacman
+        if state.is_terminal() or depth == 0:
+            return self.evaluate_state(state)
+
         if ghost_index == 0:
             value = -float('inf')
 
-        for direction, next_tile in self.valid_moves(state.player_tile):
-            next_state = self.apply_pacman_move(state, next_tile)
-            score = self.alphabeta(next_state, depth, alpha, beta, ghost_index=1)
-            value = max(value, score)
-            alpha = max(alpha, value)
+            for direction, next_tile in self.valid_moves(state.player_tile):
+                next_state = self.apply_pacman_move(state, next_tile)
+                
+                score = self.alphabeta(next_state, depth, alpha, beta, ghost_index=1)
+                
+                value = max(value, score)
+                alpha = max(alpha, value)
 
-            if alpha >= beta:
-                break  # prune
+                if alpha >= beta:
+                    break  # Prune
+            return value
 
-        return value
+        else: 
+            ghost_i = ghost_index - 1  
+            value = float('inf')
+            current_ghost_tile = state.ghost_tiles[ghost_i]
 
+            for direction, next_tile in self.valid_moves(current_ghost_tile):
+                next_state = self.apply_ghost_move(state, ghost_i, next_tile)
 
-    #min layers ghosts
-        ghost_i = ghost_index - 1
-        value = float('inf')
-        current_ghost_tile = state.ghost_tiles[ghost_i]
+                if ghost_index == num_ghosts:
+                    next_gi = 0
+                    next_depth = depth - 1
+                else:
+                    next_gi = ghost_index + 1
+                    next_depth = depth
 
-        for direction, next_tile in self.valid_moves(current_ghost_tile):
-            next_state = self.apply_ghost_move(state, ghost_i, next_tile)
+                score = self.alphabeta(next_state, next_depth, alpha, beta, next_gi)
+                
+                value = min(value, score)
+                beta = min(beta, value)
 
-            if ghost_index == len(state.ghost_tiles):
-                next_gi = 0
-                next_depth = depth - 1
-            else:
-                next_gi = ghost_index + 1
-                next_depth = depth
+                if beta <= alpha:
+                    break  # Prune
+            return value
 
-            score = self.alphabeta(next_state, next_depth, alpha, beta, next_gi)
-            value = min(value, score)
-            beta = min(beta, value)
-
-            if beta <= alpha:
-                break  # prune
-
-        return value
-    
     def choose_alphabeta_move(self, current_game_state, search_depth=3):
         best_score = -float('inf')
         best_direction = self.direction
